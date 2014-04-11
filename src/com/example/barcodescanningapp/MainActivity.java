@@ -1,22 +1,25 @@
 package com.example.barcodescanningapp;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
-import android.app.DialogFragment;
-import android.app.FragmentManager;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Base64;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -31,9 +34,6 @@ import com.google.zxing.integration.android.IntentResult;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
-
-import fragments.FirstTimeDialogFragment;
-
 /**
  * 
  *
@@ -44,6 +44,8 @@ public class MainActivity extends Activity implements OnClickListener {
 	private Button scanBtn;
 	private TextView formatTxt, contentTxt;
 	private ProgressDialog progressDialog;
+	String mCurrentPhotoPath;
+	private static final int REQUEST_IMAGE_CAPTURE = 12;
 	int status;
 	@SuppressLint("NewApi")
 	@Override
@@ -55,18 +57,64 @@ public class MainActivity extends Activity implements OnClickListener {
 		scanBtn = (Button) findViewById(R.id.scan_button);
 		formatTxt = (TextView) findViewById(R.id.scan_format);
 		contentTxt = (TextView) findViewById(R.id.scan_content);
+		Button cameraButton=(Button) findViewById(R.id.camera_open_button);
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
 		actionBar.setBackgroundDrawable(new ColorDrawable(Color.GRAY));
-
+		cameraButton.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				//dispatchTakePictureIntent();	
+				sendImageToServer();
+			}
+		});
+		
 		// listen for clicks
 		scanBtn.setOnClickListener(this);
+		
 	}
+	private void dispatchTakePictureIntent() {
+	    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+	    // Ensure that there's a camera activity to handle the intent
+	    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+	        // Create the File where the photo should go
+	        File photoFile = null;
+	        try {
+	            photoFile = createImageFile();
+	        } catch (IOException ex) {
+	            // Error occurred while creating the File
+	          
+	        }
+	        // Continue only if the File was successfully created
+	        if (photoFile != null) {
+	            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT,
+	                    Uri.fromFile(photoFile));
+	            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+	        }
+	    }
+	}
+	private File createImageFile() throws IOException {
+	    // Create an image file name
+	    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+	    String imageFileName = "JPEG_" + timeStamp + "_";
+	    File storageDir = Environment.getExternalStoragePublicDirectory(
+	            Environment.DIRECTORY_PICTURES+"/CameraSample");
+	    File image = File.createTempFile(
+	        imageFileName,  /* prefix */
+	        ".jpg",         /* suffix */
+	        storageDir      /* directory */
+	    );
 
+	    // Save a file: path for use with ACTION_VIEW intents
+	    mCurrentPhotoPath = image.getAbsolutePath();
+	    return image;
+	}
 	public void onClick(View v) {
 		// check for scan button
 		if (v.getId() == R.id.scan_button) {
-			// instantiate ZXing integration class
+			// instantiate ZXing integration cla	String mCurrentPhotoPath;
 			IntentIntegrator scanIntegrator = new IntentIntegrator(this);
 			// start scanning
 			scanIntegrator.initiateScan();
@@ -84,13 +132,16 @@ public class MainActivity extends Activity implements OnClickListener {
 			// get format name of data scanned
 
 			long currentTime = System.currentTimeMillis();
-			sendDataToServer(scanContent, currentTime + "");
+			//sendDataToServer(scanContent, currentTime + "");
 			contentTxt.setText("Student: " + scanContent);
 		} else {
 			// invalid scan data or scan canceled
-			Toast toast = Toast.makeText(getApplicationContext(),
+			/*Toast toast = Toast.makeText(getApplicationContext(),
 					"No scan data received!", Toast.LENGTH_SHORT);
-			toast.show();
+			toast.show();*/
+		}
+		if(requestCode==REQUEST_IMAGE_CAPTURE){
+			sendImageToServer();
 		}
 	}
 
@@ -98,60 +149,29 @@ public class MainActivity extends Activity implements OnClickListener {
 	 * sends data to server asynchronously
 	 * 
 	 * */
-	void sendDataToServer(String scanContent, String currentTime) {
-		RequestParams params = new RequestParams();
-		params.put("content", scanContent);
-		params.put("time", currentTime);
-		// sending data to server
-
-		progressDialog = new ProgressDialog(MainActivity.this);
-		progressDialog.setMessage("Sending Data to server, Please wait...");
-		progressDialog.setIndeterminate(true);
-		progressDialog.show();
-
+	void sendImageToServer() {
+		Bitmap bm = BitmapFactory.decodeFile(mCurrentPhotoPath);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();  
+		bm.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object   
+		byte[] b = baos.toByteArray(); 
+		String encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+		//WriteDataToFile fileWriter=new WriteDataToFile();
+		//fileWriter.writeOnFile("encodedImage.txt", encodedImage);
+		RequestParams params=new RequestParams();
+		params.put("image", encodedImage);
+		
 		AsyncHttpClient client = new AsyncHttpClient();
-		client.post(variables.HttpVariables.httpRequestURL, params,
-				new AsyncHttpResponseHandler() {
-					@SuppressLint("NewApi")
-					@Override
-					public void onSuccess(String response) {
-						progressDialog.hide();
-						// formatTxt.setText("FORMAT: "+response);
-						if (response.contains("true"))
-							formatTxt.setText("FORMAT: " + response);
-						else {
-							responseString = response;
-							try {
-								JSONObject jsonResponse = new JSONObject(
-										response);
-								String id = jsonResponse.getString("_id");
-								status = jsonResponse.getInt("status");
-								
-								JSONArray inOutArrey = jsonResponse
-										.getJSONArray("time_in_out");
-								if(status==1 && inOutArrey.length()>0){
-									Long time = Long.parseLong(inOutArrey.getJSONObject(inOutArrey.length()-1).getString("intime"));
-									formatTxt.setText("Previous in time: "
-											+ dateConverter(time));
-								}
-								if(status==0 && inOutArrey.length()>0){
-									Long time = Long.parseLong(inOutArrey.getJSONObject(inOutArrey.length()-2).getString("outtime"));
-									formatTxt.setText("Previous out time: "
-											+ dateConverter(time));
-								}
-								
-
-							} catch (JSONException e) {
-								// TODO Auto-generated catch block
-								FragmentManager fm = getFragmentManager();
-								DialogFragment newFragment = new FirstTimeDialogFragment();
-								newFragment.setRetainInstance(true);
-								newFragment.show(fm, "dialog");
-							}
-							/**/
-						}
-					}
-				});
+		Toast.makeText(MainActivity.this, "sending data ..",
+				   Toast.LENGTH_LONG).show();
+			client.post("http://10.20.3.70:9000/store",params,new AsyncHttpResponseHandler() {
+				@Override
+				public void onSuccess(String response) {
+					Toast.makeText(MainActivity.this, response,
+							   Toast.LENGTH_LONG).show();
+				}
+			});
+		
+		//Toast.makeText(MainActivity.this, encodedImage, Toast.LENGTH_LONG).show();
 	}
 
 	@Override

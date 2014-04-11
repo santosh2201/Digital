@@ -2,7 +2,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg"
     tools:context=".MainActivity" >
 
     <RelativeLayout
@@ -32,6 +31,17 @@
         android:textIsSelectable="true"
         android:layout_centerHorizontal="true"
         android:layout_below="@id/scan_format" />
+
+    <Button
+        android:id="@+id/camera_open_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/scan_format"
+        android:layout_centerHorizontal="true"
+        android:text="click photo" />
+
+ 
+
     </RelativeLayout>
 
 </FrameLayout>
