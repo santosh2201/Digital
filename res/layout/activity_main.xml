@@ -36,11 +36,22 @@
         android:id="@+id/camera_open_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/scan_format"
-        android:layout_centerHorizontal="true"
-        android:text="click photo" />
+        android:layout_alignLeft="@+id/scan_button"
+        android:layout_below="@+id/scan_content"
+        android:layout_marginTop="128dp"
+        android:text="click photo and encode" />
 
- 
+    <EditText
+        android:id="@+id/editText1"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/scan_format"
+        android:ems="10" >
+
+        <requestFocus />
+    </EditText>
 
     </RelativeLayout>
 

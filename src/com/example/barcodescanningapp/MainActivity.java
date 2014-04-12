@@ -66,8 +66,8 @@ public class MainActivity extends Activity implements OnClickListener {
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				//dispatchTakePictureIntent();	
-				sendImageToServer();
+				dispatchTakePictureIntent();	
+				//sendImageToServer();
 			}
 		});
 		
@@ -152,11 +152,16 @@ public class MainActivity extends Activity implements OnClickListener {
 	void sendImageToServer() {
 		Bitmap bm = BitmapFactory.decodeFile(mCurrentPhotoPath);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();  
-		bm.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object   
+		bm.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object  
+		progressDialog = new ProgressDialog(MainActivity.this);
+		progressDialog.setMessage("encoding image .... ");
+		progressDialog.setIndeterminate(true);
+		progressDialog.show();
 		byte[] b = baos.toByteArray(); 
 		String encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
 		//WriteDataToFile fileWriter=new WriteDataToFile();
 		//fileWriter.writeOnFile("encodedImage.txt", encodedImage);
+		
 		RequestParams params=new RequestParams();
 		params.put("image", encodedImage);
 		
@@ -166,6 +171,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			client.post("http://10.20.3.70:9000/store",params,new AsyncHttpResponseHandler() {
 				@Override
 				public void onSuccess(String response) {
+					progressDialog.dismiss();
 					Toast.makeText(MainActivity.this, response,
 							   Toast.LENGTH_LONG).show();
 				}
