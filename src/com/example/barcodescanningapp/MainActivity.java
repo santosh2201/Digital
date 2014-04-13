@@ -2,6 +2,8 @@ package com.example.barcodescanningapp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,6 +35,7 @@ import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.BinaryHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 /**
  * 
@@ -41,11 +44,13 @@ import com.loopj.android.http.RequestParams;
 public class MainActivity extends Activity implements OnClickListener {
 	public static String responseString = null;
 	// UI instance variables
+	String HOME_PAGE="http://10.20.3.70:9000/";
 	private Button scanBtn;
 	private TextView formatTxt, contentTxt;
 	private ProgressDialog progressDialog;
 	String mCurrentPhotoPath;
 	private static final int REQUEST_IMAGE_CAPTURE = 12;
+		
 	int status;
 	@SuppressLint("NewApi")
 	@Override
@@ -141,45 +146,80 @@ public class MainActivity extends Activity implements OnClickListener {
 			toast.show();*/
 		}
 		if(requestCode==REQUEST_IMAGE_CAPTURE){
-			sendImageToServer();
+			try {
+				sendImageToServer();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
 	/**
 	 * sends data to server asynchronously
+	 * @throws FileNotFoundException 
 	 * 
 	 * */
-	void sendImageToServer() {
-		Bitmap bm = BitmapFactory.decodeFile(mCurrentPhotoPath);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();  
-		bm.compress(Bitmap.CompressFormat.JPEG, 100, baos); //bm is the bitmap object  
+	void sendImageToServer() throws FileNotFoundException {
+	
+		
 		progressDialog = new ProgressDialog(MainActivity.this);
 		progressDialog.setMessage("encoding image .... ");
 		progressDialog.setIndeterminate(true);
 		progressDialog.show();
-		byte[] b = baos.toByteArray(); 
-		String encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+		File file=new File(mCurrentPhotoPath);
+	
 		//WriteDataToFile fileWriter=new WriteDataToFile();
 		//fileWriter.writeOnFile("encodedImage.txt", encodedImage);
 		
 		RequestParams params=new RequestParams();
-		params.put("image", encodedImage);
+		params.put("image", file);
+		file.delete();
 		
 		AsyncHttpClient client = new AsyncHttpClient();
 		Toast.makeText(MainActivity.this, "sending data ..",
 				   Toast.LENGTH_LONG).show();
-			client.post("http://10.20.3.70:9000/store",params,new AsyncHttpResponseHandler() {
+			client.post(HOME_PAGE+"store",params,new AsyncHttpResponseHandler() {
 				@Override
 				public void onSuccess(String response) {
-					progressDialog.dismiss();
-					Toast.makeText(MainActivity.this, response,
-							   Toast.LENGTH_LONG).show();
+					
+						Toast.makeText(MainActivity.this, "downloading image..",
+								   Toast.LENGTH_LONG).show();
+						downloadImage(response);
 				}
 			});
 		
 		//Toast.makeText(MainActivity.this, encodedImage, Toast.LENGTH_LONG).show();
 	}
-
+	void downloadImage(String url){
+		String IMG_URL=HOME_PAGE+url;
+		AsyncHttpClient client = new AsyncHttpClient();
+		String[] allowedContentTypes = new String[] { "image/png", "image/jpeg","image/bmp" };
+		client.get(IMG_URL, new BinaryHttpResponseHandler(allowedContentTypes) {
+		    @Override
+		    public void onSuccess(byte[] fileData) {
+		        // Do something with the file
+		    	
+		    	try {
+		    		File file = new File(Environment.getExternalStorageDirectory()
+							+ File.separator + "Octave" + File.separator + "output.bmp");
+		    		if(file.exists()){
+		    			file.delete();
+		    		}
+					file.createNewFile();
+					FileOutputStream fo = new FileOutputStream(file);
+					fo.write(fileData);
+					fo.close();
+					progressDialog.dismiss();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		    	//write the bytes in file
+		    	
+		    }
+		});
+	}
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu items for use in the action bar
