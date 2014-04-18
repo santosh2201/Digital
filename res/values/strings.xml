@@ -14,5 +14,6 @@
     <string name="title_section3">Section 3</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_tabs">TabsActivity</string>
+    <string name="title_activity_decoded">DecodedActivity</string>
 
 </resources>

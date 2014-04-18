@@ -1,7 +1,9 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:background="@drawable/wall"
     android:layout_height="match_parent"
+    
     tools:context=".MainActivity" >
 
     <RelativeLayout
@@ -39,19 +41,38 @@
         android:layout_alignLeft="@+id/scan_button"
         android:layout_below="@+id/scan_content"
         android:layout_marginTop="128dp"
-        android:text="click photo and encode" />
+        android:text="click to take photo and encode" />
 
     <EditText
-        android:id="@+id/editText1"
+        android:id="@+id/user_message"
         android:layout_width="wrap_content"
         android:layout_height="100dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_below="@+id/scan_format"
+        android:hint="type your message .."
         android:ems="10" >
 
         <requestFocus />
     </EditText>
+
+    <Button
+        android:id="@+id/decode_photo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/camera_open_button"
+        android:layout_marginTop="22dp"
+        android:text="decode photo" />
+
+    <Button
+        android:id="@+id/gallery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/decode_photo"
+        android:layout_alignBottom="@+id/decode_photo"
+        android:layout_alignParentRight="true"
+        android:text="gallery" />
 
     </RelativeLayout>
 

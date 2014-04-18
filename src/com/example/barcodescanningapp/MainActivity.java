@@ -1,6 +1,5 @@
 package com.example.barcodescanningapp;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -13,21 +12,20 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Base64;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,6 +46,11 @@ public class MainActivity extends Activity implements OnClickListener {
 	private Button scanBtn;
 	private TextView formatTxt, contentTxt;
 	private ProgressDialog progressDialog;
+	private EditText message;
+	boolean encode=false;
+	private Button decodeButton;
+	private static final int SELECT_PICTURE = 18;
+	
 	String mCurrentPhotoPath;
 	private static final int REQUEST_IMAGE_CAPTURE = 12;
 		
@@ -62,17 +65,61 @@ public class MainActivity extends Activity implements OnClickListener {
 		scanBtn = (Button) findViewById(R.id.scan_button);
 		formatTxt = (TextView) findViewById(R.id.scan_format);
 		contentTxt = (TextView) findViewById(R.id.scan_content);
+		
 		Button cameraButton=(Button) findViewById(R.id.camera_open_button);
+		Button galleryButton=(Button) findViewById(R.id.gallery);
+		
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
 		actionBar.setBackgroundDrawable(new ColorDrawable(Color.GRAY));
+		
+		message=(EditText) findViewById(R.id.user_message);
+		decodeButton=(Button) findViewById(R.id.decode_photo);
 		cameraButton.setOnClickListener(new OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
+				encode=true;
 				dispatchTakePictureIntent();	
 				//sendImageToServer();
+			}
+		});
+		
+		decodeButton.setOnClickListener(new OnClickListener() {
+			
+			
+			@Override
+			public void onClick(View v) {
+				encode=false;
+				// TODO Auto-generated method stub
+				mCurrentPhotoPath=Environment.getExternalStorageDirectory()
+						+ File.separator + "Octave" + File.separator + "output.bmp";
+				
+				try {
+					sendImageToServer();
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			
+				Toast.makeText(MainActivity.this, "decoding image....",
+						   Toast.LENGTH_LONG).show();
+				
+				
+			}
+		});
+		galleryButton.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent,
+                        "Select Picture"), SELECT_PICTURE);
+				
 			}
 		});
 		
@@ -152,8 +199,43 @@ public class MainActivity extends Activity implements OnClickListener {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
 		}
+		if (requestCode == SELECT_PICTURE) {
+			try {
+            Uri selectedImageUri = intent.getData();
+            encode=true;
+            mCurrentPhotoPath = getPath(selectedImageUri);
+           
+            
+				sendImageToServer();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		
+            
+        }
 	}
+	public String getPath(Uri uri) {
+        // just some safety built in 
+        if( uri == null ) {
+            // TODO perform some logging or show user feedback
+            return null;
+        }
+        // try to retrieve the image from the media store first
+        // this will only work for images selected from gallery
+        String[] projection = { MediaStore.Images.Media.DATA };
+        Cursor cursor = managedQuery(uri, projection, null, null, null);
+        if( cursor != null ){
+            int column_index = cursor
+            .getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        }
+        // this is our fallback here
+        return uri.getPath();
+}
 
 	/**
 	 * sends data to server asynchronously
@@ -161,20 +243,31 @@ public class MainActivity extends Activity implements OnClickListener {
 	 * 
 	 * */
 	void sendImageToServer() throws FileNotFoundException {
-	
+		
 		
 		progressDialog = new ProgressDialog(MainActivity.this);
-		progressDialog.setMessage("encoding image .... ");
+		if(encode){
+				progressDialog.setMessage("encoding image .... ");
+		}else{
+			progressDialog.setMessage("decoding image .... ");
+		}
 		progressDialog.setIndeterminate(true);
 		progressDialog.show();
-		File file=new File(mCurrentPhotoPath);
+		final File file=new File(mCurrentPhotoPath);
 	
 		//WriteDataToFile fileWriter=new WriteDataToFile();
 		//fileWriter.writeOnFile("encodedImage.txt", encodedImage);
 		
+		String userMessage="null";
+		userMessage=message.getText().toString();
 		RequestParams params=new RequestParams();
 		params.put("image", file);
-		file.delete();
+		params.put("user_message", userMessage);
+		if(encode)
+			params.put("encode", "true");
+		else
+			params.put("encode", "false");
+		
 		
 		AsyncHttpClient client = new AsyncHttpClient();
 		Toast.makeText(MainActivity.this, "sending data ..",
@@ -183,9 +276,19 @@ public class MainActivity extends Activity implements OnClickListener {
 				@Override
 				public void onSuccess(String response) {
 					
-						Toast.makeText(MainActivity.this, "downloading image..",
-								   Toast.LENGTH_LONG).show();
-						downloadImage(response);
+						
+						if(encode){
+						
+							downloadImage(response);
+						}else{
+							Intent intent=new Intent(MainActivity.this, DecodedActivity.class);
+							intent.putExtra("message", response);
+							intent.putExtra("encode", false);
+							startActivity(intent);
+							Toast.makeText(MainActivity.this,response,
+									   Toast.LENGTH_LONG).show();
+							progressDialog.dismiss();
+						}
 				}
 			});
 		
@@ -195,6 +298,9 @@ public class MainActivity extends Activity implements OnClickListener {
 		String IMG_URL=HOME_PAGE+url;
 		AsyncHttpClient client = new AsyncHttpClient();
 		String[] allowedContentTypes = new String[] { "image/png", "image/jpeg","image/bmp" };
+		Toast.makeText(MainActivity.this,"downloading file ....",
+				   Toast.LENGTH_LONG).show();
+		progressDialog.dismiss();
 		client.get(IMG_URL, new BinaryHttpResponseHandler(allowedContentTypes) {
 		    @Override
 		    public void onSuccess(byte[] fileData) {
@@ -210,7 +316,12 @@ public class MainActivity extends Activity implements OnClickListener {
 					FileOutputStream fo = new FileOutputStream(file);
 					fo.write(fileData);
 					fo.close();
-					progressDialog.dismiss();
+					 Intent intent2=new Intent(MainActivity.this, DecodedActivity.class);
+						intent2.putExtra("encode", true);
+						startActivity(intent2);
+					Toast.makeText(MainActivity.this,"done downloading ...",
+							   Toast.LENGTH_LONG).show();
+					
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
