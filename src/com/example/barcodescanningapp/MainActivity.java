@@ -50,6 +50,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	boolean encode=false;
 	private Button decodeButton;
 	private static final int SELECT_PICTURE = 18;
+	private static final int DECODE_PICTURE = 38;
 	
 	String mCurrentPhotoPath;
 	private static final int REQUEST_IMAGE_CAPTURE = 12;
@@ -68,6 +69,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		
 		Button cameraButton=(Button) findViewById(R.id.camera_open_button);
 		Button galleryButton=(Button) findViewById(R.id.gallery);
+		Button decodeGallery=(Button) findViewById(R.id.decode_gallery);
 		
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
@@ -123,6 +125,18 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 		});
 		
+		decodeGallery.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(Intent.createChooser(intent,
+                        "Select Picture"), DECODE_PICTURE);
+			}
+		});
 		// listen for clicks
 		scanBtn.setOnClickListener(this);
 		
@@ -213,9 +227,20 @@ public class MainActivity extends Activity implements OnClickListener {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		
-            
         }
+		if (requestCode == DECODE_PICTURE) {
+			try {
+            Uri selectedImageUri = intent.getData();
+            encode=false;
+            mCurrentPhotoPath = getPath(selectedImageUri);
+           
+            
+				sendImageToServer();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	public String getPath(Uri uri) {
         // just some safety built in 

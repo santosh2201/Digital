@@ -1192,15 +1192,16 @@ containing a value of this type.
         public static final int action_menu_divider=0x7f050016;
         public static final int action_menu_presenter=0x7f050017;
         public static final int action_mode_close_button=0x7f050027;
-        public static final int action_search=0x7f05004c;
-        public static final int action_settings=0x7f05004e;
+        public static final int action_search=0x7f05004d;
+        public static final int action_settings=0x7f05004f;
         public static final int activity_chooser_view_content=0x7f050028;
         public static final int always=0x7f05000b;
         public static final int beginning=0x7f050011;
-        public static final int bus_stop_name=0x7f05004b;
+        public static final int bus_stop_name=0x7f05004c;
         public static final int camera_open_button=0x7f050046;
         public static final int checkbox=0x7f050030;
         public static final int collapseActionView=0x7f05000d;
+        public static final int decode_gallery=0x7f05004a;
         public static final int decode_photo=0x7f050048;
         public static final int default_activity_button=0x7f05002b;
         public static final int dialog=0x7f05000e;
@@ -1220,7 +1221,7 @@ containing a value of this type.
         public static final int imageView=0x7f05003f;
         public static final int listMode=0x7f050001;
         public static final int list_item=0x7f05002c;
-        public static final int list_view=0x7f05004a;
+        public static final int list_view=0x7f05004b;
         public static final int message=0x7f050040;
         public static final int middle=0x7f050012;
         public static final int never=0x7f050009;
@@ -1249,7 +1250,7 @@ containing a value of this type.
         public static final int showHome=0x7f050004;
         public static final int showTitle=0x7f050006;
         public static final int split_action_bar=0x7f050021;
-        public static final int student_history=0x7f05004d;
+        public static final int student_history=0x7f05004e;
         public static final int submit_area=0x7f05003c;
         public static final int tabMode=0x7f050002;
         public static final int terrain=0x7f05001b;
